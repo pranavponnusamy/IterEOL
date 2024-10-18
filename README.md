@@ -7,9 +7,9 @@ This repository evaluates embeddings on the STS (Semantic Textual Similarity) da
 ## Setup
 Before running the evaluation, follow these steps:
 
-### Step 1: Add OpenAI Keys
+### Step 1: Add OpenAI Keys (Optional. Only required if you want to run openai generator models)
 You need to add your OpenAI API keys to the project.
-1. Create a file called `GenEOL/openai_keys.py`
+1. Create a file called `geneol/openai_keys.py`
 
 ```
 OPENAI_API_KEY = ""
