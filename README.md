@@ -2,7 +2,7 @@
 
   
 
-This repository evaluates embeddings on the STS (Semantic Textual Similarity) datasets using GenEOL.
+This repository evaluates embeddings on the STS (Semantic Textual Similarity) datasets using GenEOL, a training-free method for sentence embeddings (https://arxiv.org/pdf/2410.14635).
 
 ## Setup
 Before running the evaluation, follow these steps:
