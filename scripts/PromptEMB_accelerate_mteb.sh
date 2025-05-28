@@ -1,6 +1,7 @@
 #!/bin/bash
 #classification from 0-10
-datasets=(STS12 STS13 STS14 STS15 STS16 STS17 STS22 STSBenchmark SICK-R BIOSSES MR CR SUBJ MPQA SST2 TREC MRPC AmazonCounterfactualClassification Banking77Classification EmotionClassification MedrxivClusteringS2S TwentyNewsgroupsClustering AskUbuntuDupQuestions SciDocsRR StackOverflowDupQuestions TwitterSemEval2015 SprintDuplicateQuestions)
+# datasets=(STS12 STS13 STS14 STS15 STS16 STS17 STS22 STSBenchmark SICK-R BIOSSES MR CR SUBJ MPQA SST2 TREC MRPC AmazonCounterfactualClassification Banking77Classification EmotionClassification MedrxivClusteringS2S TwentyNewsgroupsClustering AskUbuntuDupQuestions SciDocsRR StackOverflowDupQuestions TwitterSemEval2015 SprintDuplicateQuestions)
+datasets=(STS12 STS16)
               
 
 

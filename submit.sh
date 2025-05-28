@@ -1,31 +1,59 @@
 #!/bin/bash
 
+#SBATCH --job-name=GenEOL_submission
+#SBATCH --account=paceship-efficient_geneol
+#SBATCH --qos=inferno
+#SBATCH -C amd
+#SBATCH --partition=cpu-amd
+#SBATCH --mem=8G
+#SBATCH --time=04:00:00
+#SBATCH --output=./Nlogs/test3/%A_%a.out
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=$USER@gatech.edu
+
+module load anaconda3
+conda activate embeddings
+
+# Just before you run your Python code:
+export HF_HOME="./huggingface"
+export HF_DATASETS_CACHE="./huggingface_datasets"
+export HF_TOKEN="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"
+
 # Array of select values
-select_values=(24)
-# select_values=(2)
+select_values=(8)
 
 # Array of seed values
 seed_values=(42)
-# seed_values=(42)
 
 # Models and their corresponding output subdirectories
 declare -A models
-models["mistralai/Mistral-7B-v0.1"]="mistral0.1"
+models["mistralai/Mistral-7B-v0.3"]="mistral0.1"
+# models["mistralai/Mistral-7B-Instruct-v0.1"]="mistral0.1"
 # models["meta-llama/Meta-Llama-3-8B"]="llama3"
+# models["Qwen/Qwen2.5-7B"]="qwen"
+# models["google/gemma-3-12b-pt"]="gemma"
 
 # Base directories and other parameters
-base_output_dir="./Nlogs/1014AB2_comp2_s5_mistralchat0.1_1_1_8"
-base_script="./scripts3/PromptEMB2_accelerate_mteb.sh"
-partition="compsci-gpu"
-array="0-8%10"
-gres="gpu:a5000:2"
-ntasks=2
-mem="40gb"
+base_output_dir="./Nlogs/test5-yashprompt-embers"
+base_script="./scripts/PromptEMB_accelerate_mteb.sh"
 model_1="mistralai/Mistral-7B-Instruct-v0.1"
-task_name="1014AB2_comp2"
+# model_1="mistralai/Mistral-7B-v0.3"
+#model_1="google/gemma-3-12b-it"
+task_name="test5-yashprompt-embers"
 session="s5"
 gpu_count=1
-task_per_node=8
+task_per_node=1
+account="paceship-efficient_geneol"
+
+# SLURM parameters
+partition="gpu-h100"
+array="0-1%10"
+gres="gpu:h100:1"
+ntasks=1
+mem="32G"
+
+# Create output directory if it doesn't exist
+mkdir -p "$base_output_dir"
 
 # Outer loop: iterate over the models
 for model_2 in "${!models[@]}"; do
@@ -38,9 +66,19 @@ for model_2 in "${!models[@]}"; do
     for seed in "${seed_values[@]}"; do
       # Include the seed value in the output directory
       output_dir="${base_output_dir}/${model_subdir}_k${select_value}_seed${seed}"
+      mkdir -p "$output_dir"
 
-      sbatch --partition=$partition --array=$array --gres=$gres --ntasks=$ntasks --mem=$mem \
-             --output="${output_dir}/%03a.out" \
+      sbatch --account=$account \
+             --qos=embers \
+             --partition=gpu-h100 \
+             --gres=gpu:h100:1 \
+             --mem-per-gpu=80G \
+             --time=2:00:00 \
+             --array=0-1%10 \
+             --output="${output_dir}/%A_%a.out" \
+             --error="${output_dir}/%A_%a.err" \
+             --mail-type=BEGIN,END,FAIL \
+             --mail-user=$USER@gatech.edu \
              $base_script $task_name $session $model_1 $model_2 $gpu_count $task_per_node \
              --compositional --select $select_value --seed $seed
     done
