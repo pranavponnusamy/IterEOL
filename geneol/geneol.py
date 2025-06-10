@@ -115,13 +115,12 @@ class LLM:
                     new_output_ids = output.sequences[:, inputs.input_ids.shape[1]:]
                     
                     #output.hidden_states gives us a list of all the hidden states
-                    #once we select the last layer with -1, then hidden_states[-1] has shape [batch_size, seq_len+1, hidden_dim]
+                    #once we select the last generated token [-1], then hidden_states[-1] has shape [batch_size, seq_len+1, hidden_dim]
                     #here we to select all batches, the last token in each sequence, and whole hidden dimension
                     #batch x dim
-                    last_token_embeddings = output.hidden_states[-1][-1][:, -1, :]
                     
-                    # print(last_token_embeddings, flush=True)
                     
+                    last_token_embeddings = output.hidden_states[-1][-2][:, -1, :]
                     
                     
                     del inputs; del output
@@ -154,17 +153,17 @@ class LLM:
                 return outputs, embeddings
 
             else:    
-                inputs = self.ltokenizer.apply_chat_template(instructions_inputs_batch, padding=True, truncation=True, max_length=3*self.args.max_length, return_tensors="pt", return_dict=True).to("cuda")
+                inputs = self.ltokenizer.apply_chat_template(instructions_inputs_batch, padding=True, return_tensors="pt", return_dict=True).to("cuda")
                 
                 output = self.model.generate(**inputs, do_sample=False, num_return_sequences=self.args.num_gens, temperature=self.gtemp, repetition_penalty=1.0, top_p=self.top_p, max_length=3*self.args.max_length, return_dict_in_generate=True, output_hidden_states=True)
 
                 new_output_ids = output.sequences[:, inputs.input_ids.shape[1]:]
                 
                 # Get last token embeddings similar to the batch_size >= 4 case
-                last_token_embeddings = output.hidden_states[-1][-1][:, -1, :]
+                last_token_embeddings = output.hidden_states[-1][-2][:, -1, :]
                 
                 del inputs; del output
-                outputs = self.tokenizer.batch_decode(new_output_ids, skip_special_tokens=True, spaces_between_special_tokens=False)
+                outputs = self.tokenizer.batch_decode(new_output_ids, skip_special_tokens=False, spaces_between_special_tokens=False)
                 
 
                 del new_output_ids
@@ -217,7 +216,6 @@ class LLM:
         return final_embeddings, inputs
 
     def switchon_gen_model(self):
-        k
         if self.args.method=='b5':
             return
 
@@ -355,8 +353,8 @@ class GenEOL(torch.nn.Module):
             
             
             #This is where we want to to run the mutiple generation-decode loop            
-            num_generations = 5
-            print(f"Number of generations  num_generations", flush=True)
+            num_generations = 10
+            print(f"Number of generations  {num_generations}", flush=True)
             context = {}
             for gen_id in range(num_generations):
                 iteration_embeddings = torch.tensor([]).cuda()
@@ -366,23 +364,34 @@ class GenEOL(torch.nn.Module):
                 all_prompts = []
                 for sent_idx, sent in enumerate(tqdm(sentences_rank, desc="Encode-Decode Sentences", disable=len(sentences_rank)<50)):
                     
-                    prompt = get_task_specific_emb_prompt(sent, args.task)
+                    # prompt = get_task_specific_emb_prompt(sent, args.task)
+                    prompt = f"Represent this sentences <{sent}> in a single word."
                     # print(f"\nInitial prompt: {prompt}", flush=True)
                     
                     context_words = context.get(sent_idx, [])
                     
+                    print(context_words, flush=True)
+                    
                     
                     full_prompt = []
-                    # if context_words:
-                    #     for turn_idx, word in enumerate(context_words):
-                    #         full_prompt.append({"role": "user", "content": prompt})
-                    #         full_prompt.append({"role": "assistant", "content": word})
+                    if context_words:
+                        for turn_idx, word in enumerate(context_words):
+                            
+                            # full_prompt.append({"role": "user", "content": f" The words '{', '.join(context_words[:turn_idx])}' don't completely capture the sentence. Try again. {prompt}"})
                     
+                    
+                            if turn_idx != 0:        
+                                full_prompt.append({"role": "user", "content": f" The words '{', '.join(context_words[:turn_idx])}' don't completely capture the sentence. Try again. {prompt}"})
+                            else:
+                                full_prompt.append({"role": "user", "content": prompt})
+                    
+                            full_prompt.append({"role": "assistant", "content": word})
+                            
                     if gen_id != 0:        
-                        full_prompt.append({"role": "user", "content": f"Besides the components of {', '.join(context_words)} in the sentence, the setence can be distilled in one word" + prompt})
+                        full_prompt.append({"role": "user", "content": prompt + f"Besides the components of {', '.join(context_words)} in the sentence, the setence can be distilled in one word"})
                     else:
                         full_prompt.append({"role": "user", "content": prompt})
-                    
+                        
                     all_prompts.append(full_prompt)
                     
                     print(f"Full prompt with context: {full_prompt}", flush=True)
@@ -403,18 +412,7 @@ class GenEOL(torch.nn.Module):
                     # print(context, flush=True)
                 
                 iteration_embeddings = torch.cat([iteration_embeddings, generated_embedding_data], dim = 0)
-                
-                # #list of tensors of [batch_size, 1, hidden_dim]
-                # if generated_embedding_data is not None:
-                #     if isinstance(generated_embedding_data, list):
-                #         # llm.generate returned a list of tensors
-                #         for emb_tensor in generated_embedding_data:
-                #             if torch.is_tensor(emb_tensor): # Ensure it's a tensor before .cpu()
-                #                 all_embeddings.append(emb_tensor.cpu())
-                #     elif torch.is_tensor(generated_embedding_data):
-                #         # llm.generate returned a single tensor
-                #         all_embeddings.append(generated_embedding_data.cpu())
-                
+            
                 all_embeddings.append(iteration_embeddings)
 
         # all_embeddings = [all_embeddings]

@@ -34,12 +34,12 @@ models["mistralai/Mistral-7B-v0.3"]="mistral0.1"
 # models["google/gemma-3-12b-pt"]="gemma"
 
 # Base directories and other parameters
-base_output_dir="./Nlogs/test5-yashprompt-embers"
+base_output_dir="./Nlogs/r10-fullconetext-final"
 base_script="./scripts/PromptEMB_accelerate_mteb.sh"
 model_1="mistralai/Mistral-7B-Instruct-v0.1"
 # model_1="mistralai/Mistral-7B-v0.3"
 #model_1="google/gemma-3-12b-it"
-task_name="test5-yashprompt-embers"
+task_name="r10-fullconetext-final"
 session="s5"
 gpu_count=1
 task_per_node=1
@@ -47,7 +47,7 @@ account="paceship-efficient_geneol"
 
 # SLURM parameters
 partition="gpu-h100"
-array="0-1%10"
+array="0-5%10"
 gres="gpu:h100:1"
 ntasks=1
 mem="32G"
@@ -74,7 +74,7 @@ for model_2 in "${!models[@]}"; do
              --gres=gpu:h100:1 \
              --mem-per-gpu=80G \
              --time=2:00:00 \
-             --array=0-1%10 \
+             --array=0-5%10 \
              --output="${output_dir}/%A_%a.out" \
              --error="${output_dir}/%A_%a.err" \
              --mail-type=BEGIN,END,FAIL \
