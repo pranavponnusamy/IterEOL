@@ -1,6 +1,6 @@
 # GenEOL Evaluation
 
-  
+Regenerate and Regnerate-fullcontext branches are two experiments that I wrote to extend GenEOL, but they yielded bad results. 
 
 This repository evaluates embeddings on the STS (Semantic Textual Similarity) datasets using GenEOL, a training-free method for sentence embeddings (https://arxiv.org/pdf/2410.14635).
 
